@@ -15,8 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import VerifyRequest, VerifyResponse, Classification
 from app.prompt_builder import build_prompt
-from app.response_parser import parse_llm_response, FALLBACK_RESPONSE
-from app.llm_client import call_llm
+from app.response_parser import FALLBACK_RESPONSE
+from app.llm_client import query_llm
 from app import cache
 
 # ---------------------------------------------------------------------------
@@ -98,22 +98,22 @@ async def verify_warning(request: VerifyRequest) -> VerifyResponse:
 
     # 2. Build prompt -------------------------------------------------------
     system_prompt, user_prompt = build_prompt(request)
+    prompt = system_prompt + "\n\n" + user_prompt
     logger.info(
         "Verifying warning: category=%s  snippet_len=%d",
         request.category,
         len(request.code_snippet),
     )
 
-    # 3. Call LLM -----------------------------------------------------------
+    # 3. Call LLM + parse (handled inside query_llm) ------------------------
     start = time.perf_counter()
     try:
-        raw_response = await call_llm(system_prompt, user_prompt)
+        result = query_llm(prompt)
     except RuntimeError as exc:
         # Missing API key or config error
         logger.error("Configuration error: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
     except Exception as exc:
-        # Transient OpenAI errors
         logger.error("LLM call failed: %s", exc)
         raise HTTPException(
             status_code=502,
@@ -122,14 +122,7 @@ async def verify_warning(request: VerifyRequest) -> VerifyResponse:
     elapsed = time.perf_counter() - start
     logger.info("LLM responded in %.2f s", elapsed)
 
-    # 4. Parse response -----------------------------------------------------
-    try:
-        result = parse_llm_response(raw_response)
-    except Exception as exc:
-        logger.error("Response parsing failed: %s", exc)
-        result = FALLBACK_RESPONSE
-
-    # 5. Cache & return -----------------------------------------------------
+    # 4. Cache & return -----------------------------------------------------
     cache.put(request, result)
     return result
 
