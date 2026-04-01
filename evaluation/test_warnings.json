@@ -1,0 +1,142 @@
+[
+  {
+    "warning_message": "Potential null pointer dereference at line 42",
+    "category": "NULL_POINTER_DEREFERENCE",
+    "code_snippet": "public void processUser(User user) {\n    if (user != null) {\n        logger.info(\"Processing: \" + user.getName());\n    }\n    user.updateLastAccess(); // line 42\n}",
+    "optional_context": "user parameter comes from HTTP request and may be null",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Unused variable: serialVersionUID",
+    "category": "UNUSED_VARIABLE",
+    "code_snippet": "public class User implements Serializable {\n    private static final long serialVersionUID = 1L;\n    private String name;\n    private String email;\n}",
+    "optional_context": "Standard Java serialization pattern required by Serializable interface",
+    "expected_label": "FALSE_POSITIVE"
+  },
+  {
+    "warning_message": "Resource leak: 'stream' is never closed",
+    "category": "RESOURCE_LEAK",
+    "code_snippet": "public String readFile(String path) throws IOException {\n    FileInputStream stream = new FileInputStream(path);\n    byte[] data = stream.readAllBytes();\n    return new String(data);\n}",
+    "optional_context": "Called frequently in a long-running server process",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Method 'equals' may return false for equal objects",
+    "category": "EQUALS_CONTRACT",
+    "code_snippet": "public class Point {\n    private int x, y;\n\n    @Override\n    public boolean equals(Object obj) {\n        if (!(obj instanceof Point)) return false;\n        Point other = (Point) obj;\n        return this.x == other.x && this.y == other.y;\n    }\n\n    @Override\n    public int hashCode() {\n        return Objects.hash(x, y);\n    }\n}",
+    "optional_context": "Both equals and hashCode are properly overridden",
+    "expected_label": "FALSE_POSITIVE"
+  },
+  {
+    "warning_message": "SQL injection vulnerability: user input concatenated into query",
+    "category": "SQL_INJECTION",
+    "code_snippet": "public List<User> findUsers(String name) {\n    String query = \"SELECT * FROM users WHERE name = '\" + name + \"'\";\n    return jdbcTemplate.query(query, new UserRowMapper());\n}",
+    "optional_context": "name parameter comes directly from request.getParameter()",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Unchecked cast from Object to List<String>",
+    "category": "UNCHECKED_CAST",
+    "code_snippet": "public List<String> getTags(HttpSession session) {\n    Object attr = session.getAttribute(\"tags\");\n    @SuppressWarnings(\"unchecked\")\n    List<String> tags = (List<String>) attr;\n    return tags;\n}",
+    "optional_context": "Session attribute is always set as List<String> in the login handler, suppression annotation is present",
+    "expected_label": "FALSE_POSITIVE"
+  },
+  {
+    "warning_message": "Possible array index out of bounds",
+    "category": "ARRAY_INDEX_OUT_OF_BOUNDS",
+    "code_snippet": "public String getFirst(String[] items) {\n    return items[0];\n}",
+    "optional_context": "No null or length check before accessing index 0",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Dead store: value assigned to 'count' is never read",
+    "category": "DEAD_STORE",
+    "code_snippet": "public int processItems(List<Item> items) {\n    int count = 0;\n    for (Item item : items) {\n        if (item.isValid()) {\n            count++;\n        }\n    }\n    return count;\n}",
+    "optional_context": "count is incremented and returned at the end of the method",
+    "expected_label": "FALSE_POSITIVE"
+  },
+  {
+    "warning_message": "Synchronization on non-final field 'lock'",
+    "category": "SYNC_ON_NONFINAL",
+    "code_snippet": "public class Counter {\n    private Object lock = new Object();\n    private int count = 0;\n\n    public void increment() {\n        synchronized (lock) {\n            count++;\n        }\n    }\n\n    public void reset() {\n        lock = new Object();\n        count = 0;\n    }\n}",
+    "optional_context": "lock is reassigned in reset(), which can cause race conditions",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Unused import: java.util.ArrayList",
+    "category": "UNUSED_IMPORT",
+    "code_snippet": "import java.util.ArrayList;\nimport java.util.List;\nimport java.util.Map;\n\npublic class Service {\n    private List<String> items = new java.util.LinkedList<>();\n\n    public Map<String, Object> getStats() {\n        return Map.of(\"count\", items.size());\n    }\n}",
+    "optional_context": "ArrayList is imported but LinkedList is used instead",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Condition 'x != null' is always true",
+    "category": "CONSTANT_CONDITION",
+    "code_snippet": "public void process(String x) {\n    Objects.requireNonNull(x, \"x must not be null\");\n    if (x != null) {\n        System.out.println(x.length());\n    }\n}",
+    "optional_context": "requireNonNull guarantees x is non-null after line 1",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Method may return null but is not annotated with @Nullable",
+    "category": "NULLABLE_RETURN",
+    "code_snippet": "public User findById(Long id) {\n    return userMap.get(id);\n}",
+    "optional_context": "Map.get() returns null if key is not present. Callers do not check for null.",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "String comparison using '==' instead of '.equals()'",
+    "category": "STRING_EQUALITY",
+    "code_snippet": "public boolean isAdmin(String role) {\n    return role == \"ADMIN\";\n}",
+    "optional_context": "String literals are interned in Java, but role comes from user input at runtime",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Uninitialized variable 'result' may be used",
+    "category": "UNINITIALIZED_VARIABLE",
+    "code_snippet": "public int compute(int x) {\n    int result;\n    if (x > 0) {\n        result = x * 2;\n    } else if (x < 0) {\n        result = x * -1;\n    }\n    return result;\n}",
+    "optional_context": "If x == 0, neither branch assigns result",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Field 'name' is accessed before null check",
+    "category": "NULL_CHECK_AFTER_USE",
+    "code_snippet": "public void greet(Person person) {\n    String greeting = \"Hello, \" + person.name;\n    if (person != null) {\n        System.out.println(greeting);\n    }\n}",
+    "optional_context": "person.name is accessed on line 2 before the null check on line 3",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Unused parameter 'context' in method 'handle'",
+    "category": "UNUSED_PARAMETER",
+    "code_snippet": "public class MyHandler implements Handler {\n    @Override\n    public void handle(Request req, Context context) {\n        String body = req.getBody();\n        System.out.println(\"Handling: \" + body);\n    }\n}",
+    "optional_context": "handle() is an interface method — signature cannot be changed. context is intentionally unused in this implementation.",
+    "expected_label": "FALSE_POSITIVE"
+  },
+  {
+    "warning_message": "Possible integer overflow in multiplication",
+    "category": "INTEGER_OVERFLOW",
+    "code_snippet": "public long factorial(int n) {\n    long result = 1;\n    for (int i = 2; i <= n; i++) {\n        result *= i;\n    }\n    return result;\n}",
+    "optional_context": "result is long (64-bit). For n <= 20, no overflow occurs. No input validation on n.",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Catching generic Exception instead of specific type",
+    "category": "CATCH_GENERIC_EXCEPTION",
+    "code_snippet": "public void loadConfig(String path) {\n    try {\n        Properties props = new Properties();\n        props.load(new FileInputStream(path));\n        this.config = props;\n    } catch (Exception e) {\n        logger.error(\"Failed to load config\", e);\n        this.config = getDefaults();\n    }\n}",
+    "optional_context": "Fallback to defaults is intentional. Both IOException and general errors should be caught.",
+    "expected_label": "FALSE_POSITIVE"
+  },
+  {
+    "warning_message": "Hardcoded password in source code",
+    "category": "HARD_CODED_PASSWORD",
+    "code_snippet": "public class DbConfig {\n    private static final String DB_HOST = \"localhost\";\n    private static final String DB_USER = \"admin\";\n    private static final String DB_PASS = \"P@ssw0rd123!\";\n\n    public Connection getConnection() throws SQLException {\n        return DriverManager.getConnection(\n            \"jdbc:mysql://\" + DB_HOST + \":3306/app\", DB_USER, DB_PASS);\n    }\n}",
+    "optional_context": "Production code with credentials in source",
+    "expected_label": "TRUE_POSITIVE"
+  },
+  {
+    "warning_message": "Boolean method 'isEmpty' returns constant value",
+    "category": "CONSTANT_RETURN",
+    "code_snippet": "public class FixedList<T> {\n    private final List<T> items;\n\n    public FixedList(List<T> initial) {\n        this.items = new ArrayList<>(initial);\n    }\n\n    public boolean isEmpty() {\n        return items.isEmpty();\n    }\n}",
+    "optional_context": "items is initialized from constructor parameter and may or may not be empty",
+    "expected_label": "FALSE_POSITIVE"
+  }
+]
