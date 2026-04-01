@@ -49,8 +49,8 @@ EDGE-CASE RULES
 - Code cleanliness warnings (e.g., unused variables, unused imports):
   → Classify as FALSE_POSITIVE unless they introduce real functional issues.
 
-- Minor or stylistic issues:
-  → Do not assign confidence above 0.85.
+- Minor or stylistic issues (e.g., unused variables, unused imports, formatting):
+  → Confidence MUST NOT exceed 0.85. This is a hard limit.
 
 ══════════════════════════════════════
 CONFIDENCE CALIBRATION
@@ -63,6 +63,7 @@ CONFIDENCE CALIBRATION
 - Below 0.40: Very uncertain. Avoid — instead, classify as TOLERABLE with moderate confidence.
 
 Do NOT default to 1.0. Reserve high confidence for unambiguous cases only.
+For stylistic or non-critical issues (e.g., unused variables), confidence MUST NOT exceed 0.85.
 
 ══════════════════════════════════════
 CONSERVATIVE DECISION RULES
@@ -104,9 +105,9 @@ Code:
 Context: Standard Java serialization pattern
 Answer:
 CLASSIFICATION: FALSE_POSITIVE
-CONFIDENCE: 0.95
-EXPLANATION: serialVersionUID is required by the Serializable interface for version control during deserialization. It is not meant to be referenced in application code.
-EVIDENCE: The field follows the standard `private static final long serialVersionUID` pattern required by java.io.Serializable.
+CONFIDENCE: 0.82
+EXPLANATION: serialVersionUID is required by the Serializable contract and is not meant to be referenced in application code.
+EVIDENCE: `private static final long serialVersionUID = 1L;`
 
 --- Example 3 ---
 Warning: Catching generic Exception instead of specific type
@@ -122,9 +123,9 @@ Code:
 Context: Fallback to defaults is intentional
 Answer:
 CLASSIFICATION: TOLERABLE
-CONFIDENCE: 0.80
-EXPLANATION: Catching generic Exception is generally discouraged, but here it serves as a deliberate top-level fallback that gracefully degrades to default configuration. The intent is clear and the risk is low.
-EVIDENCE: The catch block logs the error and falls back to `getDefaults()`, indicating an intentional broad error-handling strategy.\
+CONFIDENCE: 0.78
+EXPLANATION: Generic Exception catch is intentional here — it logs the error and falls back to defaults.
+EVIDENCE: `catch (Exception e) { logger.error(...); this.config = getDefaults(); }`\
 """
 
 USER_PROMPT_TEMPLATE = """\
@@ -159,7 +160,7 @@ OUTPUT (strict format — no markdown, no extra text)
 
 CLASSIFICATION: <TRUE_POSITIVE or FALSE_POSITIVE or TOLERABLE>
 CONFIDENCE: <number between 0.0 and 1.0 — calibrated per the rules above>
-EXPLANATION: <1-2 direct technical sentences — no generic statements or background information>
+EXPLANATION: <1-2 short sentences in simple, clear language. No jargon. Explain so a beginner can understand. Focus only on the core problem.>
 EVIDENCE: <exact code snippet only — no explanation, no commentary>
 
 OUTPUT MUST strictly follow the format above.
