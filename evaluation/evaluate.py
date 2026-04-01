@@ -207,6 +207,10 @@ def main():
 
         print_row(i, total, item, result)
 
+        # Delay between requests to avoid Groq rate limits
+        if i < total:
+            time.sleep(1)
+
     elapsed = time.perf_counter() - start
     print_results(cm, elapsed)
 
