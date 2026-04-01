@@ -28,50 +28,102 @@ Step 4: Decide the classification based ONLY on the code and context, not assump
 Step 5: Assign a calibrated confidence score (see rules below).
 
 ══════════════════════════════════════
+STRICT DECISION RULES
+══════════════════════════════════════
+
+- TRUE_POSITIVE:
+  The issue can cause runtime errors, crashes, incorrect results, or security risks.
+
+- FALSE_POSITIVE:
+  The warning does NOT affect program behavior at all.
+  The code is safe or the tool misunderstands the context.
+
+- TOLERABLE:
+  The issue is real, clearly intentional, and does not affect correctness.
+
+PRIORITY RULE:
+
+Always prioritize correctness over conservativeness.
+
+- If the issue clearly affects behavior → TRUE_POSITIVE
+- If it clearly does not affect behavior → FALSE_POSITIVE
+- Use TOLERABLE only as a last resort
+
+══════════════════════════════════════
+COMMON CATEGORIES
+══════════════════════════════════════
+
+These categories often indicate real bugs. However, always confirm using the code and context before deciding:
+
+- NULL_POINTER / NULL_CHECK_AFTER_USE
+- RESOURCE_LEAK
+- SQL_INJECTION
+- ARRAY_INDEX_OUT_OF_BOUNDS
+- INTEGER_OVERFLOW
+- HARD_CODED_PASSWORD
+- UNINITIALIZED_VARIABLE
+
+These categories often indicate real issues but must still be validated using context:
+
+- STRING_EQUALITY
+- SYNC_ON_NONFINAL
+- CONSTANT_CONDITION
+
+══════════════════════════════════════
+STYLE WARNINGS (usually FALSE_POSITIVE)
+══════════════════════════════════════
+
+The following are usually FALSE_POSITIVE:
+
+- UNUSED_VARIABLE
+- UNUSED_PARAMETER
+- UNUSED_IMPORT
+
+Unless they affect logic, classify them as FALSE_POSITIVE.
+
+══════════════════════════════════════
+TOLERABLE USAGE
+══════════════════════════════════════
+
+TOLERABLE is rarely used.
+
+Use TOLERABLE only when:
+- The issue is real
+- It is clearly intentional
+- It does not affect correctness
+
+If unsure, prefer FALSE_POSITIVE over TOLERABLE.
+
+══════════════════════════════════════
 EDGE-CASE RULES
 ══════════════════════════════════════
 
 - Constant condition (e.g., `if (true)`, `x != null` after requireNonNull):
-  → Usually TRUE_POSITIVE. The condition is redundant and indicates a logic issue or dead code.
+  → TRUE_POSITIVE. Redundant condition indicates a logic issue.
 
-- Generic exception catch (e.g., `catch (Exception e)`):
-  → Usually TOLERABLE, not FALSE_POSITIVE. The issue is real but often intentional for top-level error handling.
+- Generic exception catch (e.g., `catch (Exception e)` with logging and fallback):
+  → Usually FALSE_POSITIVE unless it hides important errors.
 
 - Unused interface parameters:
-  → Usually FALSE_POSITIVE. The method signature is dictated by the interface contract.
+  → FALSE_POSITIVE. The method signature is dictated by the interface contract.
 
 - Serialization fields (e.g., serialVersionUID):
-  → Usually FALSE_POSITIVE. Required by the Serializable contract even if not directly referenced.
+  → FALSE_POSITIVE. Required by the Serializable contract.
 
-- Unused variables, unused imports, or unused parameters:
-  → Usually FALSE_POSITIVE unless they affect program behavior or indicate a logical bug.
-
-- Code cleanliness warnings (e.g., unused variables, unused imports):
-  → Classify as FALSE_POSITIVE unless they introduce real functional issues.
-
-- Minor or stylistic issues (e.g., unused variables, unused imports, formatting):
-  → Confidence MUST NOT exceed 0.85. This is a hard limit.
+- Boolean method returning constant:
+  → Check if the return actually varies. If it can vary, FALSE_POSITIVE.
 
 ══════════════════════════════════════
 CONFIDENCE CALIBRATION
 ══════════════════════════════════════
 
-- 0.90–1.00 : You are certain. The code clearly confirms the classification with no ambiguity.
-- 0.75–0.89 : Strong evidence, but minor ambiguity remains (e.g., missing caller context).
-- 0.60–0.74 : Moderate evidence. Context is incomplete or the pattern has known exceptions.
-- 0.40–0.59 : Uncertain. The warning could go either way depending on missing information.
-- Below 0.40: Very uncertain. Avoid — instead, classify as TOLERABLE with moderate confidence.
+- TRUE_POSITIVE (clear bug)       : 0.90–0.95
+- FALSE_POSITIVE (clear non-issue): 0.80–0.90
+- TOLERABLE (minor/intentional)   : 0.60–0.80
+- Stylistic issues                : MUST NOT exceed 0.85
 
-Do NOT default to 1.0. Reserve high confidence for unambiguous cases only.
-For stylistic or non-critical issues (e.g., unused variables), confidence MUST NOT exceed 0.85.
-
-══════════════════════════════════════
-CONSERVATIVE DECISION RULES
-══════════════════════════════════════
-
-- When uncertain between TRUE_POSITIVE and FALSE_POSITIVE → prefer TOLERABLE.
-- When uncertain between FALSE_POSITIVE and TOLERABLE → prefer TOLERABLE.
-- It is better to flag a minor issue (TOLERABLE) than to wrongly dismiss a real bug (FALSE_POSITIVE).
+Do NOT assign very low confidence (e.g., 0.30) unless truly uncertain.
+Do NOT default to 1.0.
 
 ══════════════════════════════════════
 FEW-SHOT EXAMPLES
@@ -122,9 +174,9 @@ Code:
   }
 Context: Fallback to defaults is intentional
 Answer:
-CLASSIFICATION: TOLERABLE
-CONFIDENCE: 0.78
-EXPLANATION: Generic Exception catch is intentional here — it logs the error and falls back to defaults.
+CLASSIFICATION: FALSE_POSITIVE
+CONFIDENCE: 0.82
+EXPLANATION: The generic catch is intentional — it logs the error and falls back to defaults safely.
 EVIDENCE: `catch (Exception e) { logger.error(...); this.config = getDefaults(); }`\
 """
 
