@@ -43,6 +43,15 @@ EDGE-CASE RULES
 - Serialization fields (e.g., serialVersionUID):
   → Usually FALSE_POSITIVE. Required by the Serializable contract even if not directly referenced.
 
+- Unused variables, unused imports, or unused parameters:
+  → Usually FALSE_POSITIVE unless they affect program behavior or indicate a logical bug.
+
+- Code cleanliness warnings (e.g., unused variables, unused imports):
+  → Classify as FALSE_POSITIVE unless they introduce real functional issues.
+
+- Minor or stylistic issues:
+  → Do not assign confidence above 0.85.
+
 ══════════════════════════════════════
 CONFIDENCE CALIBRATION
 ══════════════════════════════════════
@@ -150,8 +159,13 @@ OUTPUT (strict format — no markdown, no extra text)
 
 CLASSIFICATION: <TRUE_POSITIVE or FALSE_POSITIVE or TOLERABLE>
 CONFIDENCE: <number between 0.0 and 1.0 — calibrated per the rules above>
-EXPLANATION: <clear reasoning in 2-3 sentences>
-EVIDENCE: <specific code lines, variables, or logic that support your decision>\
+EXPLANATION: <1-2 direct technical sentences — no generic statements or background information>
+EVIDENCE: <exact code snippet only — no explanation, no commentary>
+
+OUTPUT MUST strictly follow the format above.
+Do not add extra text before or after.
+Do not include markdown or explanations outside the defined fields.
+If the format is violated, consider the answer invalid and correct it internally.\
 """
 
 
